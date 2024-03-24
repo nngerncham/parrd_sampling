@@ -1,0 +1,16 @@
+[package]
+name = "parrd_sampling"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+common_traits = "0.10.2"
+fxhash = "0.2.1"
+generic-array = "1.0.0"
+polyval = "0.6.2"
+rand = "0.8.5"
+rayon = "1.9.0"
+to_bytes = "0.1.0"
+universal-hash = "0.5.1"
