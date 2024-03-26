@@ -1,5 +1,5 @@
 use rand::{rngs::ThreadRng, Rng};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::cwslice::UnsafeSlice;
 use crate::models::Sampler;
@@ -69,26 +69,59 @@ fn par_scan(xs: &[i32]) -> (i32, Vec<i32>) {
 
 fn par_quick_select<'a, T: Clone + Hash + Sized + Send + Sync>(
     xs: &[T],
-    xs_slice: &UnsafeSlice<'a, T>,
+    k: usize,
     rng: &mut ThreadRng,
 ) -> T {
     let n = xs.len();
-    if n == 1 {
-        xs[0].clone()
-    } else {
-        let pivot_idx = rng.gen_range(0..n);
-        let pivot_hash = fxhash::hash64(&xs[pivot_idx]);
+    let pivot_idx = rng.gen_range(0..n);
+    let pivot_hash = fxhash::hash64(&xs[pivot_idx]);
 
-        let flags: Vec<i32> = xs
-            .par_iter()
-            .map(|x: &T| match fxhash::hash64(&x).cmp(&pivot_hash) {
-                Ordering::Less | Ordering::Equal => 1,
-                _ => 0,
-            })
-            .collect();
-        let (leq_count, locs) = par_scan(&flags);
+    let leq_flags: Vec<i32> = xs
+        .par_iter()
+        .map(|x: &T| match fxhash::hash64(&x).cmp(&pivot_hash) {
+            Ordering::Less | Ordering::Equal => 1,
+            _ => 0,
+        })
+        .collect();
+    let (leq_count, left_locs) = par_scan(&leq_flags);
 
-        xs[0].clone()
+    match leq_count.cmp(&(k as i32)) {
+        Ordering::Equal => xs[pivot_idx].clone(),
+        Ordering::Greater => {
+            let mut left = vec![xs[0].clone(); leq_count as usize];
+            let left_slice = UnsafeSlice::new(&mut left);
+            xs.par_iter().enumerate().for_each(|(i, x): (usize, &T)| {
+                if leq_flags[i] == 1 {
+                    unsafe {
+                        left_slice.write(left_locs[i] as usize, x.clone());
+                    }
+                }
+            });
+
+            par_quick_select(&left, k, rng)
+        }
+        Ordering::Less => {
+            let gt_flags: Vec<i32> = xs
+                .par_iter()
+                .map(|x: &T| match fxhash::hash64(&x).cmp(&pivot_hash) {
+                    Ordering::Greater => 1,
+                    _ => 0,
+                })
+                .collect();
+            let (gt_count, gt_locs) = par_scan(&gt_flags);
+
+            let mut right = vec![xs[0].clone(); gt_count as usize];
+            let right_slice = UnsafeSlice::new(&mut right);
+            xs.par_iter().enumerate().for_each(|(i, x): (usize, &T)| {
+                if gt_flags[i] == 1 {
+                    unsafe {
+                        right_slice.write(gt_locs[i] as usize, x.clone());
+                    }
+                }
+            });
+
+            par_quick_select(&right, k - leq_count as usize, rng)
+        }
     }
 }
 
@@ -101,9 +134,8 @@ impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PrioritySampler<T> {
         }
 
         let mut rng = rand::thread_rng();
-        let mut xs = arr.to_vec();
-        let xs_slice = UnsafeSlice::new(&mut xs);
-        // let kth_element = par_quick_select(&xs, &xs_slice, &mut rng);
+        let xs = arr.to_vec();
+        let kth_element = par_quick_select(&xs, k, &mut rng);
 
         Some(vec![])
     }
@@ -131,6 +163,24 @@ mod test {
 
         assert_eq!(acc, ps);
         assert_eq!(&seq_ps, &partials);
+    }
+
+    #[test]
+    fn qs_median() {
+        use super::par_quick_select;
+        use rand::seq::SliceRandom;
+
+        let sample_size = 100_000;
+        let mut xs: Vec<i32> = (1..=(sample_size + 1)).collect();
+        let mut rng = rand::thread_rng();
+        xs.shuffle(&mut rng);
+
+        let pqs_output = par_quick_select(&xs, 10_000, &mut rng);
+        xs.sort();
+        let exp_output = xs[10_000];
+
+        println!("{}", pqs_output);
+        assert_eq!(exp_output, pqs_output);
     }
 
     // #[test]
