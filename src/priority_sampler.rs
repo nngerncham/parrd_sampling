@@ -195,4 +195,18 @@ mod test {
 
         assert_eq!(k, samples.unwrap().len());
     }
+
+    #[test]
+    fn ps_rd_test_len() {
+        use crate::{models::Sampler, priority_sampler::PrioritySampler};
+
+        let k = 50_000;
+        let sample_size = 10_000_000;
+        let population = (0..sample_size)
+            .map(|_| rand::random::<i32>())
+            .collect::<Vec<i32>>();
+        let samples = PrioritySampler::sample(&population, k);
+
+        assert_eq!(k, samples.unwrap().len());
+    }
 }
