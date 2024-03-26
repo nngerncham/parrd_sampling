@@ -4,7 +4,7 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIter
 use crate::cwslice::UnsafeSlice;
 use crate::models::Sampler;
 use core::hash::Hash;
-use std::{cmp::Ordering, marker::PhantomData};
+use std::{cmp::Ordering, marker::PhantomData, usize};
 
 struct PrioritySampler<T: Clone + Hash + Sized + Send + Sync> {
     marker: PhantomData<T>,
@@ -136,8 +136,27 @@ impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PrioritySampler<T> {
         let mut rng = rand::thread_rng();
         let xs = arr.to_vec();
         let kth_element = par_quick_select(&xs, k, &mut rng);
+        let kth_hash = fxhash::hash64(&kth_element);
+        let leq_flags: Vec<i32> = xs
+            .par_iter()
+            .map(|x: &T| match fxhash::hash64(&x).cmp(&kth_hash) {
+                Ordering::Less | Ordering::Equal => 1,
+                _ => 0,
+            })
+            .collect();
+        let (count, locs) = par_scan(&leq_flags);
 
-        Some(vec![])
+        let mut samples = vec![xs[0].clone(); count as usize];
+        let samples_slice = UnsafeSlice::new(&mut samples);
+        xs.par_iter().enumerate().for_each(|(i, x): (usize, &T)| {
+            if leq_flags[i] == 1 {
+                unsafe {
+                    samples_slice.write(locs[i] as usize, x.clone());
+                }
+            }
+        });
+
+        Some(samples)
     }
 }
 
@@ -166,32 +185,14 @@ mod test {
     }
 
     #[test]
-    fn qs_median() {
-        use super::par_quick_select;
-        use rand::seq::SliceRandom;
+    fn ps_test_len() {
+        use crate::{models::Sampler, priority_sampler::PrioritySampler};
 
-        let sample_size = 100_000;
-        let mut xs: Vec<i32> = (1..=(sample_size + 1)).collect();
-        let mut rng = rand::thread_rng();
-        xs.shuffle(&mut rng);
+        let k = 50_000;
+        let sample_size = 10_000_000;
+        let population = (0..sample_size).collect::<Vec<i32>>();
+        let samples = PrioritySampler::sample(&population, k);
 
-        let pqs_output = par_quick_select(&xs, 10_000, &mut rng);
-        xs.sort();
-        let exp_output = xs[10_000];
-
-        println!("{}", pqs_output);
-        assert_eq!(exp_output, pqs_output);
+        assert_eq!(k, samples.unwrap().len());
     }
-
-    // #[test]
-    // fn ps_test_len() {
-    //     use crate::{models::Sampler, priority_sampler::PrioritySampler};
-    //
-    //     let k = 10;
-    //     let sample_size = 100_000;
-    //     let population = (0..sample_size).collect::<Vec<i32>>();
-    //     let samples = PrioritySampler::sample(&population, k);
-    //
-    //     assert_eq!(k, samples.unwrap().len());
-    // }
 }
