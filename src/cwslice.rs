@@ -1,3 +1,4 @@
+use common_traits::Integer;
 use std::cell::UnsafeCell;
 
 // https://stackoverflow.com/questions/65178245/how-do-i-write-to-a-mutable-slice-from-multiple-threads-at-arbitrary-indexes-wit
@@ -21,5 +22,17 @@ impl<'a, T> UnsafeSlice<'a, T> {
     pub unsafe fn write(&self, i: usize, value: T) {
         let ptr = self.slice[i].get();
         *ptr = value;
+    }
+
+    pub unsafe fn read(&self, i: usize) -> &T {
+        let ptr = self.slice[i].get();
+        &*ptr
+    }
+}
+
+impl<'a, T: Integer + Ord> UnsafeSlice<'a, T> {
+    pub unsafe fn write_max(&self, i: usize, value: T) {
+        let og_value = self.read(i);
+        self.write(i, *og_value.max(&value));
     }
 }

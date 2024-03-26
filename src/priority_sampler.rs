@@ -67,7 +67,7 @@ fn par_scan(xs: &[i32]) -> (i32, Vec<i32>) {
     (total, res)
 }
 
-fn par_quick_select<'a, T: Clone + Hash + Sized + Send + Sync>(
+fn par_quick_select<T: Clone + Hash + Sized + Send + Sync>(
     xs: &[T],
     k: usize,
     rng: &mut ThreadRng,
