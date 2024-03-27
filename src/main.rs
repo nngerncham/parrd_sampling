@@ -1,7 +1,5 @@
-mod cwslice;
-mod models;
-mod perm_sampler;
-mod priority_sampler;
+mod samplers;
+mod utils;
 
 fn main() {
     println!("Hello, world!");
