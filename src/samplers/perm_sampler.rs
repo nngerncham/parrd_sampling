@@ -57,11 +57,11 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         // do reserve and commit
         idx_remaining
             .par_iter()
-            .take(prefix_size)
+            // .take(prefix_size)
             .for_each(|i| reserve(*i));
         let fail_commits: Vec<usize> = idx_remaining
             .par_iter()
-            .take(prefix_size)
+            // .take(prefix_size)
             .map(|&i| commit(i))
             .collect();
 
@@ -72,7 +72,7 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         idx_remaining
             .par_iter()
             .enumerate()
-            .take(prefix_size)
+            // .take(prefix_size)
             .for_each(|(i, &idx): (usize, &usize)| {
                 if fail_commits[i] == 1 {
                     unsafe {
@@ -86,7 +86,7 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         idx_remaining = new_idx_remaining;
     }
 
-    None
+    Some(ans[..k].to_vec())
 }
 
 impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PermutationSampler<T> {
@@ -127,15 +127,18 @@ mod test {
 
         let n = 20;
         let k = 5;
-        let mut rng = thread_rng();
-        let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
+        // let mut rng = thread_rng();
+        // let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
+        let swap_targets = vec![0; n];
         let range: Vec<usize> = (0..n).collect();
+
+        // println!("{:?}", &swap_targets);
+        // println!("{:?}", &range);
 
         let seq_result = knuth_shuffle(&range, k, &swap_targets);
         let par_result = super::permute_k(&range, k, &swap_targets).unwrap();
 
-        println!("{:?}", seq_result);
-        println!("{:?}", par_result);
+        println!("{:?}", &(seq_result.iter().zip(&par_result)));
 
         assert_eq!(&seq_result, &par_result);
     }

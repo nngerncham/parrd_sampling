@@ -1,3 +1,5 @@
+use common_traits::Sequence;
+
 use crate::utils::cwslice::UnsafeSlice;
 
 fn par_scan_up<'a>(xs: &'a [usize], aux: &UnsafeSlice<'a, usize>, aux_offset: usize) -> usize {
@@ -47,12 +49,17 @@ fn par_scan_down(
 }
 
 pub fn par_scan(xs: &[usize]) -> (usize, Vec<usize>) {
+    // println!("Length is {}", xs.len());
+    if xs.is_empty() {
+        return (0, vec![]);
+    }
+
     let mut ell = vec![0; xs.len() - 1];
     let ell_slice = UnsafeSlice::new(&mut ell);
+    let total = par_scan_up(xs, &ell_slice, 0);
+
     let mut res = vec![0; xs.len()];
     let res_slice = UnsafeSlice::new(&mut res);
-
-    let total = par_scan_up(xs, &ell_slice, 0);
     par_scan_down(&ell, &res_slice, 0, 0, xs.len());
     (total, res)
 }
