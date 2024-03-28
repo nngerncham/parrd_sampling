@@ -10,6 +10,8 @@ use crate::{
     utils::{cwslice::UnsafeSlice, prefix_scan::par_scan},
 };
 
+const PREFIX_DIVISOR: usize = 50;
+
 struct PermutationSampler<T: Clone + Sized + Send + Sync> {
     marker: PhantomData<T>,
 }
@@ -27,7 +29,6 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
     swap_targets: &[usize],
 ) -> Option<Vec<T>> {
     let n = arr.len();
-    let mut swapped_count = 0;
 
     let mut reservation = vec![0usize; n]; // init'd as -1 in paper but I can't see the point
     let resv_slice = UnsafeSlice::new(&mut reservation);
@@ -50,18 +51,20 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         }
     };
 
+    let mut swapped_count = 0;
     let mut idx_remaining = (0..n).collect::<Vec<usize>>();
-    let mut prefix_size = (n - swapped_count) / 50;
+    let mut prefix_size = ((n - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
+    // maxed with PREFIX_DIVISOR so if prefix_size < PREFIX_DIVISOR then it doesn't become 0
 
     while swapped_count < k {
         // do reserve and commit
         idx_remaining
             .par_iter()
-            // .take(prefix_size)
-            .for_each(|i| reserve(*i));
+            .take(prefix_size)
+            .for_each(|&i| reserve(i));
         let fail_commits: Vec<usize> = idx_remaining
             .par_iter()
-            // .take(prefix_size)
+            .take(prefix_size)
             .map(|&i| commit(i))
             .collect();
 
@@ -72,7 +75,7 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         idx_remaining
             .par_iter()
             .enumerate()
-            // .take(prefix_size)
+            .take(prefix_size)
             .for_each(|(i, &idx): (usize, &usize)| {
                 if fail_commits[i] == 1 {
                     unsafe {
@@ -81,8 +84,8 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
                 }
             });
 
-        swapped_count += prefix_size - failed_count;
-        prefix_size = (n - swapped_count) / 50;
+        swapped_count += fail_commits.len() - failed_count; // # processed - # failed = # successful
+        prefix_size = ((n - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
         idx_remaining = new_idx_remaining;
     }
 
