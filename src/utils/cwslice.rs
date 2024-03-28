@@ -38,11 +38,3 @@ impl<'a, T: Clone + Sized + Send + Sync> UnsafeSlice<'a, T> {
         ptr::swap(ptr_a, ptr_b);
     }
 }
-
-// use common_traits::Integer;
-// impl<'a, T: Integer + Ord> UnsafeSlice<'a, T> {
-//     pub unsafe fn write_max(&self, i: usize, value: T) {
-//         let og_value = self.read(i);
-//         self.write(i, *og_value.max(&value));
-//     }
-// }

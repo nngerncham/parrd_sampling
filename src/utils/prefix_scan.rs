@@ -1,5 +1,3 @@
-use common_traits::Sequence;
-
 use crate::utils::cwslice::UnsafeSlice;
 
 fn par_scan_up<'a>(xs: &'a [usize], aux: &UnsafeSlice<'a, usize>, aux_offset: usize) -> usize {

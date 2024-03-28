@@ -47,18 +47,22 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
 
     let reservation: Vec<AtomicUsize> = (0..n)
         .into_par_iter()
-        .map(|_| AtomicUsize::new(0))
+        .map(|_| AtomicUsize::new(n))
         .collect(); // init'd as -1 in paper but I can't see the point
-    let reserve = |i: usize| reservation[i].fetch_max(i, AtomicOrdering::Relaxed);
+    let reserve = |i: usize| {
+        reservation[i].fetch_min(i, AtomicOrdering::AcqRel);
+        reservation[swap_targets[i]].fetch_min(i, AtomicOrdering::AcqRel);
+    };
 
     let mut ans = arr.to_vec();
     let ans_slice = UnsafeSlice::new(&mut ans);
     let commit = |i: usize| -> usize {
+        let swap_idx = swap_targets[i];
         unsafe {
-            if reservation[i].load(AtomicOrdering::Relaxed) == i
-                && reservation[i].load(AtomicOrdering::Relaxed) == i
+            if reservation[i].load(AtomicOrdering::Acquire) == i
+                && reservation[swap_idx].load(AtomicOrdering::Acquire) == i
             {
-                ans_slice.swap(i, swap_targets[i]);
+                ans_slice.swap(i, swap_idx);
                 0
             } else {
                 1
@@ -68,8 +72,8 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
 
     let mut swapped_count = 0;
     let mut idx_remaining = (0..n).collect::<Vec<usize>>();
-    let mut prefix_size = ((n - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
-    // maxed with PREFIX_DIVISOR so if prefix_size < PREFIX_DIVISOR then it doesn't become 0
+    let mut prefix_size = (k / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
+    // max btw PREFIX_DIVISOR so if prefix_size < PREFIX_DIVISOR then it =/> 0
 
     while swapped_count < k {
         // do reserve and commit
@@ -90,19 +94,25 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
             .par_iter()
             .enumerate()
             .take(prefix_size)
-            .for_each(|(i, &idx): (usize, &usize)| {
+            .for_each(|(i, &idx)| {
                 if fail_commits[i] == 1 {
+                    reservation[idx].store(n, AtomicOrdering::Release);
                     unsafe {
                         new_idx_remaining_slice.write(pack_locs[i], idx);
                     }
                 }
             });
 
-        // # processed - # failed = # successful
+        // new # successful += # processed - # failed
         swapped_count += fail_commits.len() - failed_count;
-        prefix_size = ((n - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
+        prefix_size = match k.cmp(&swapped_count) {
+            std::cmp::Ordering::Less => PREFIX_DIVISOR,
+            _ => ((k - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR),
+        };
         idx_remaining = new_idx_remaining;
     }
+
+    // println!("{:?}", reservation);
 
     Some(ans[..k].to_vec())
 }
@@ -132,18 +142,23 @@ mod test {
         use rand::Rng;
 
         let n = 20;
-        let k = 5;
+        let k = 10;
         let mut rng = thread_rng();
         let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
         let xs: Vec<usize> = (0..n).collect();
 
-        // println!("{:?}", &swap_targets);
-        // println!("{:?}", &range);
-
         let seq_result = super::knuth_shuffle(&xs, k, &swap_targets);
         let par_result = super::par_permute_k(&xs, k, &swap_targets).unwrap();
 
-        println!("{:?}", &(seq_result.iter().zip(&par_result)));
+        println!("{:?}", &swap_targets);
+        println!(
+            "{:?}",
+            &(seq_result
+                .iter()
+                .zip(&par_result)
+                .map(|(&a, &b)| (a, b))
+                .collect::<Vec<(usize, usize)>>())
+        );
 
         assert_eq!(&seq_result, &par_result);
     }
