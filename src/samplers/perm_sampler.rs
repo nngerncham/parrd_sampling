@@ -21,13 +21,12 @@ fn generate_swaps(n: usize) -> Vec<usize> {
         .collect::<Vec<usize>>()
 }
 
-fn permute_k<T: Clone + Sized + Send + Sync>(
+fn par_permute_k<T: Clone + Sized + Send + Sync>(
     arr: &[T],
     k: usize,
     swap_targets: &[usize],
 ) -> Option<Vec<T>> {
     let n = arr.len();
-    let mut swapped_count = 0;
 
     let mut reservation = vec![0usize; n]; // init'd as -1 in paper but I can't see the point
     let resv_slice = UnsafeSlice::new(&mut reservation);
@@ -50,19 +49,20 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         }
     };
 
+    let mut swapped_count = 0;
+    let mut prefix_size = ((n - swapped_count) / 50).max(50);
     let mut idx_remaining = (0..n).collect::<Vec<usize>>();
-    let mut prefix_size = (n - swapped_count) / 50;
 
     while swapped_count < k {
         // do reserve and commit
         idx_remaining
             .par_iter()
-            // .take(prefix_size)
-            .for_each(|i| reserve(*i));
+            .take(prefix_size)
+            .for_each(|&idx| reserve(idx));
         let fail_commits: Vec<usize> = idx_remaining
             .par_iter()
-            // .take(prefix_size)
-            .map(|&i| commit(i))
+            .take(prefix_size)
+            .map(|&idx| commit(idx))
             .collect();
 
         // pack things together for next round
@@ -72,7 +72,7 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         idx_remaining
             .par_iter()
             .enumerate()
-            // .take(prefix_size)
+            .take(prefix_size)
             .for_each(|(i, &idx): (usize, &usize)| {
                 if fail_commits[i] == 1 {
                     unsafe {
@@ -82,7 +82,7 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
             });
 
         swapped_count += prefix_size - failed_count;
-        prefix_size = (n - swapped_count) / 50;
+        prefix_size = ((n - swapped_count) / 50).max(50);
         idx_remaining = new_idx_remaining;
     }
 
@@ -93,7 +93,7 @@ impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PermutationSampler<T>
     fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
         let n = arr.len();
         let swap_targets = generate_swaps(n);
-        permute_k(arr, k, &swap_targets)
+        par_permute_k(arr, k, &swap_targets)
     }
 }
 
@@ -127,16 +127,15 @@ mod test {
 
         let n = 20;
         let k = 5;
-        // let mut rng = thread_rng();
-        // let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
-        let swap_targets = vec![0; n];
-        let range: Vec<usize> = (0..n).collect();
+        let mut rng = thread_rng();
+        let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
+        let xs: Vec<usize> = (0..n).collect();
 
         // println!("{:?}", &swap_targets);
         // println!("{:?}", &range);
 
-        let seq_result = knuth_shuffle(&range, k, &swap_targets);
-        let par_result = super::permute_k(&range, k, &swap_targets).unwrap();
+        let seq_result = knuth_shuffle(&xs, k, &swap_targets);
+        let par_result = super::par_permute_k(&xs, k, &swap_targets).unwrap();
 
         println!("{:?}", &(seq_result.iter().zip(&par_result)));
 
