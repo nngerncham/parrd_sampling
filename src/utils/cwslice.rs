@@ -1,7 +1,6 @@
-use common_traits::Hash;
 use common_traits::Integer;
 use std::cell::UnsafeCell;
-use std::ptr::swap;
+use std::ptr;
 
 // https://stackoverflow.com/questions/65178245/how-do-i-write-to-a-mutable-slice-from-multiple-threads-at-arbitrary-indexes-wit
 #[derive(Copy, Clone)]
@@ -36,7 +35,7 @@ impl<'a, T: Clone + Sized + Send + Sync> UnsafeSlice<'a, T> {
     pub unsafe fn swap(&self, loc_a: usize, loc_b: usize) {
         let ptr_a = self.slice[loc_a].get();
         let ptr_b = self.slice[loc_b].get();
-        swap(ptr_a, ptr_b);
+        ptr::swap(ptr_a, ptr_b);
     }
 }
 

@@ -23,7 +23,7 @@ fn generate_swaps(n: usize) -> Vec<usize> {
         .collect::<Vec<usize>>()
 }
 
-fn permute_k<T: Clone + Sized + Send + Sync>(
+fn par_permute_k<T: Clone + Sized + Send + Sync>(
     arr: &[T],
     k: usize,
     swap_targets: &[usize],
@@ -61,11 +61,11 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
         idx_remaining
             .par_iter()
             .take(prefix_size)
-            .for_each(|&i| reserve(i));
+            .for_each(|&idx| reserve(idx));
         let fail_commits: Vec<usize> = idx_remaining
             .par_iter()
             .take(prefix_size)
-            .map(|&i| commit(i))
+            .map(|&idx| commit(idx))
             .collect();
 
         // pack things together for next round
@@ -84,7 +84,8 @@ fn permute_k<T: Clone + Sized + Send + Sync>(
                 }
             });
 
-        swapped_count += fail_commits.len() - failed_count; // # processed - # failed = # successful
+        // # processed - # failed = # successful
+        swapped_count += fail_commits.len() - failed_count; 
         prefix_size = ((n - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
         idx_remaining = new_idx_remaining;
     }
@@ -96,7 +97,7 @@ impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PermutationSampler<T>
     fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
         let n = arr.len();
         let swap_targets = generate_swaps(n);
-        permute_k(arr, k, &swap_targets)
+        par_permute_k(arr, k, &swap_targets)
     }
 }
 
@@ -130,16 +131,15 @@ mod test {
 
         let n = 20;
         let k = 5;
-        // let mut rng = thread_rng();
-        // let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
-        let swap_targets = vec![0; n];
-        let range: Vec<usize> = (0..n).collect();
+        let mut rng = thread_rng();
+        let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
+        let xs: Vec<usize> = (0..n).collect();
 
         // println!("{:?}", &swap_targets);
         // println!("{:?}", &range);
 
-        let seq_result = knuth_shuffle(&range, k, &swap_targets);
-        let par_result = super::permute_k(&range, k, &swap_targets).unwrap();
+        let seq_result = knuth_shuffle(&xs, k, &swap_targets);
+        let par_result = super::par_permute_k(&xs, k, &swap_targets).unwrap();
 
         println!("{:?}", &(seq_result.iter().zip(&par_result)));
 
