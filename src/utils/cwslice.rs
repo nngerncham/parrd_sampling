@@ -1,4 +1,3 @@
-use common_traits::Integer;
 use std::cell::UnsafeCell;
 use std::ptr;
 
@@ -25,6 +24,7 @@ impl<'a, T> UnsafeSlice<'a, T> {
         *ptr = value;
     }
 
+    #[allow(dead_code)]
     pub unsafe fn read(&self, i: usize) -> &T {
         let ptr = self.slice[i].get();
         &*ptr
@@ -39,9 +39,10 @@ impl<'a, T: Clone + Sized + Send + Sync> UnsafeSlice<'a, T> {
     }
 }
 
-impl<'a, T: Integer + Ord> UnsafeSlice<'a, T> {
-    pub unsafe fn write_max(&self, i: usize, value: T) {
-        let og_value = self.read(i);
-        self.write(i, *og_value.max(&value));
-    }
-}
+// use common_traits::Integer;
+// impl<'a, T: Integer + Ord> UnsafeSlice<'a, T> {
+//     pub unsafe fn write_max(&self, i: usize, value: T) {
+//         let og_value = self.read(i);
+//         self.write(i, *og_value.max(&value));
+//     }
+// }

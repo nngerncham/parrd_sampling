@@ -3,7 +3,10 @@ use rand::Rng;
 use rayon::iter::{
     IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
 };
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    sync::atomic::{AtomicUsize, Ordering as AtomicOrdering},
+};
 
 use crate::{
     samplers::sampl_interface::Sampler,
@@ -12,7 +15,19 @@ use crate::{
 
 const PREFIX_DIVISOR: usize = 50;
 
-struct PermutationSampler<T: Clone + Sized + Send + Sync> {
+#[allow(dead_code)]
+pub fn knuth_shuffle(arr: &[usize], k: usize, swap_targets: &[usize]) -> Vec<usize> {
+    let mut ans = arr.to_vec();
+    swap_targets
+        .iter()
+        .take(k)
+        .enumerate()
+        .for_each(|(i, &target)| ans.swap(i, target));
+
+    ans[..k].to_vec()
+}
+
+pub struct PermutationSampler<T: Clone + Sized + Send + Sync> {
     marker: PhantomData<T>,
 }
 
@@ -23,26 +38,26 @@ fn generate_swaps(n: usize) -> Vec<usize> {
         .collect::<Vec<usize>>()
 }
 
-fn par_permute_k<T: Clone + Sized + Send + Sync>(
+pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
     arr: &[T],
     k: usize,
     swap_targets: &[usize],
 ) -> Option<Vec<T>> {
     let n = arr.len();
 
-    let mut reservation = vec![0usize; n]; // init'd as -1 in paper but I can't see the point
-    let resv_slice = UnsafeSlice::new(&mut reservation);
-
-    let reserve = |i: usize| unsafe {
-        resv_slice.write_max(i, i);
-        resv_slice.write_max(swap_targets[i], i);
-    };
+    let reservation: Vec<AtomicUsize> = (0..n)
+        .into_par_iter()
+        .map(|_| AtomicUsize::new(0))
+        .collect(); // init'd as -1 in paper but I can't see the point
+    let reserve = |i: usize| reservation[i].fetch_max(i, AtomicOrdering::Relaxed);
 
     let mut ans = arr.to_vec();
     let ans_slice = UnsafeSlice::new(&mut ans);
     let commit = |i: usize| -> usize {
         unsafe {
-            if resv_slice.read(i) == &i && resv_slice.read(swap_targets[i]) == &i {
+            if reservation[i].load(AtomicOrdering::Relaxed) == i
+                && reservation[i].load(AtomicOrdering::Relaxed) == i
+            {
                 ans_slice.swap(i, swap_targets[i]);
                 0
             } else {
@@ -58,10 +73,9 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
 
     while swapped_count < k {
         // do reserve and commit
-        idx_remaining
-            .par_iter()
-            .take(prefix_size)
-            .for_each(|&idx| reserve(idx));
+        idx_remaining.par_iter().take(prefix_size).for_each(|&idx| {
+            reserve(idx);
+        });
         let fail_commits: Vec<usize> = idx_remaining
             .par_iter()
             .take(prefix_size)
@@ -85,7 +99,7 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
             });
 
         // # processed - # failed = # successful
-        swapped_count += fail_commits.len() - failed_count; 
+        swapped_count += fail_commits.len() - failed_count;
         prefix_size = ((n - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
         idx_remaining = new_idx_remaining;
     }
@@ -102,18 +116,6 @@ impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PermutationSampler<T>
 }
 
 mod test {
-    #[allow(dead_code)]
-    fn knuth_shuffle(arr: &[usize], k: usize, swap_targets: &[usize]) -> Vec<usize> {
-        let mut ans = arr.to_vec();
-        swap_targets
-            .iter()
-            .take(k)
-            .enumerate()
-            .for_each(|(i, &target)| ans.swap(i, target));
-
-        ans[..k].to_vec()
-    }
-
     #[test]
     fn swap_generation() {
         let n = 1_000_000;
@@ -138,7 +140,7 @@ mod test {
         // println!("{:?}", &swap_targets);
         // println!("{:?}", &range);
 
-        let seq_result = knuth_shuffle(&xs, k, &swap_targets);
+        let seq_result = super::knuth_shuffle(&xs, k, &swap_targets);
         let par_result = super::par_permute_k(&xs, k, &swap_targets).unwrap();
 
         println!("{:?}", &(seq_result.iter().zip(&par_result)));
