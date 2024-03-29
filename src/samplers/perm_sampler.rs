@@ -13,7 +13,7 @@ use crate::{
     utils::{cwslice::UnsafeSlice, prefix_scan::par_scan},
 };
 
-const PREFIX_DIVISOR: usize = 50;
+const PREFIX_DIVISOR: usize = 100;
 
 #[allow(dead_code)]
 pub fn knuth_shuffle(arr: &[usize], k: usize, swap_targets: &[usize]) -> Vec<usize> {
