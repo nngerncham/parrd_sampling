@@ -523,7 +523,7 @@
       \Input{Array \(A\), Swap targets \(H\)}
 
       \State{\(I \gets [1, 2, \ldots, n]\)} \Comment{unprocessed indices}
-      \State{\(R \gets [n, n, \ldots, n]\)} \Comment{reservation slot}
+      \State{\(R \gets [n, n, \ldots, n]\) of length \(n\)} \Comment{reservation slot}
       \While{\(I\) is not empty}
         \ParFor{\(i \in I\)} \Comment{only prefix of \(I\) in practice}
           \State{\textsc{Reserve(\(R, i\))}}
@@ -531,7 +531,7 @@
         \ParFor{\(i \in I\)}
           \State{\textsc{Commit(\(R, i\))}}
         \EndParFor
-        \State{Re-pack unswapped indices in \(I\)}
+        \State{Remove committed indices from \(I\)}
       \EndWhile
     \end{algorithmic}
   \end{algorithm}

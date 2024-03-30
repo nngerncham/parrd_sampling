@@ -61,3 +61,13 @@
 
 \definecolor{Processed}{RGB}{150,150,255}
 \definecolor{Processing}{RGB}{210,200,250}
+
+\makeatletter
+\newenvironment<>{proofs}[1][\proofname]{%
+    \par
+    \def\insertproofname{#1\@addpunct{.}}%
+    \usebeamertemplate{proof begin}#2}
+  {\usebeamertemplate{proof end}}
+\makeatother
+
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
