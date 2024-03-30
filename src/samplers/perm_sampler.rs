@@ -70,12 +70,11 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
         }
     };
 
-    let mut swapped_count = 0;
-    let mut idx_remaining = (0..n).collect::<Vec<usize>>();
-    let mut prefix_size = (k / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
+    let mut idx_remaining = (0..k).collect::<Vec<usize>>();
+    let mut prefix_size = (idx_remaining.len() / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
     // max btw PREFIX_DIVISOR so if prefix_size < PREFIX_DIVISOR then it =/> 0
 
-    while swapped_count < k {
+    while !idx_remaining.is_empty() {
         // do reserve and commit
         idx_remaining.par_iter().take(prefix_size).for_each(|&idx| {
             reserve(idx);
@@ -95,8 +94,9 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
             .enumerate()
             .take(prefix_size)
             .for_each(|(i, &idx)| {
+                reservation[idx].store(n, AtomicOrdering::Release);
+                reservation[swap_targets[idx]].store(n, AtomicOrdering::Release);
                 if fail_commits[i] == 1 {
-                    reservation[idx].store(n, AtomicOrdering::Release);
                     unsafe {
                         new_idx_remaining_slice.write(pack_locs[i], idx);
                     }
@@ -104,15 +104,12 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
             });
 
         // new # successful += # processed - # failed
-        swapped_count += fail_commits.len() - failed_count;
-        prefix_size = match k.cmp(&swapped_count) {
-            std::cmp::Ordering::Less => PREFIX_DIVISOR,
-            _ => ((k - swapped_count) / PREFIX_DIVISOR).max(PREFIX_DIVISOR),
-        };
         idx_remaining = new_idx_remaining;
+        prefix_size = (idx_remaining.len() / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
+        // println!("{:?}", &swap_targets);
+        // println!("{:?}", &reservation);
+        // println!("{:?}", &idx_remaining);
     }
-
-    // println!("{:?}", reservation);
 
     Some(ans[..k].to_vec())
 }
@@ -151,14 +148,14 @@ mod test {
         let par_result = super::par_permute_k(&xs, k, &swap_targets).unwrap();
 
         println!("{:?}", &swap_targets);
-        println!(
-            "{:?}",
-            &(seq_result
-                .iter()
-                .zip(&par_result)
-                .map(|(&a, &b)| (a, b))
-                .collect::<Vec<(usize, usize)>>())
-        );
+        // println!(
+        //     "{:?}",
+        //     &(seq_result
+        //         .iter()
+        //         .zip(&par_result)
+        //         .map(|(&a, &b)| (a, b))
+        //         .collect::<Vec<(usize, usize)>>())
+        // );
 
         assert_eq!(&seq_result, &par_result);
     }
