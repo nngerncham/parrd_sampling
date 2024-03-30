@@ -13,3 +13,14 @@
 \algnewcommand{\IIf}[2]{\State{\textbf{if}\ #1\ \textbf{then}\ #2}}
 \algnewcommand{\IElsIf}[2]{\State{\textbf{else if}\ #1\ \textbf{then}\ #2}}
 \algnewcommand{\IElse}[1]{\State{\textbf{else}\ \textbf{then}\ #1}}
+
+\algblock{ParFor}{EndParFor}
+\algrenewtext{ParFor}[1]{\textbf{parfor} #1 \textbf{do}}
+\algrenewtext{EndParFor}{\textbf{end} \textbf{parfor}}
+
+\algnewcommand\algorithmicinput{\textbf{Input:}}
+\algnewcommand\Input{\item[\algorithmicinput]}
+\algnewcommand\algorithmicoutput{\textbf{Output:}}
+\algnewcommand\Output{\item[\algorithmicoutput]}
+\algrenewcommand\algorithmicrequire{\textbf{Require:}}
+\algrenewcommand\Require{\item[\algorithmicrequire]}

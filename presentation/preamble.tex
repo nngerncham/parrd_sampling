@@ -28,9 +28,6 @@
 \usepackage{tcolorbox}
 \usepackage{framed}
 
-\usepackage{algorithm}
-\usepackage[indLines=true]{algpseudocodex}
-
 \pgfplotsset{compat=1.18}
 
 % Beamer theme with a dash of sass
@@ -55,15 +52,12 @@
 \beamertemplatenavigationsymbolsempty
 
 \usepackage{algorithm}
-\usepackage[indLines=true]{algpseudocodex}
 \usepackage{algorithmicx}
-\algnewcommand\algorithmicinput{\textbf{Input:}}
-\algnewcommand\Input{\item[\algorithmicinput]}
-\algrenewcommand\algorithmicoutput{\textbf{Output:}}
-\algrenewcommand\Output{\item[\algorithmicoutput]}
-\algrenewcommand\algorithmicrequire{\textbf{Require:}}
-\algrenewcommand\Require{\item[\algorithmicrequire]}
+\usepackage{algpseudocode}
 
 % --- CODE STUFF ---
 \usepackage{minted}
 \usemintedstyle{tango}
+
+\definecolor{Processed}{RGB}{150,150,255}
+\definecolor{Processing}{RGB}{210,200,250}
