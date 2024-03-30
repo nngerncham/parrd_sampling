@@ -94,7 +94,7 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
             .enumerate()
             .take(prefix_size)
             .for_each(|(i, &idx)| {
-                reservation[idx].store(n, AtomicOrdering::Release);
+                // reservation[idx].store(n, AtomicOrdering::Release);
                 reservation[swap_targets[idx]].store(n, AtomicOrdering::Release);
                 if fail_commits[i] == 1 {
                     unsafe {
