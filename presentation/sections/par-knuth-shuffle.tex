@@ -192,7 +192,61 @@
   Implications:
   \begin{itemize}
     \item With early termination, span is \(\O\left(\log\left(\frac{n}{n-k}\right)\right)\)
-    \item If \(k \ll n\), span approaches \(\O(1)\)
-    \item If \(k \approx n\), span approaches \(\O(\log n)\)
+    \item If \(k \ll n\), span \(\to \O(1)\)
+    \item If \(k \approx n\), span \(\to \O(\log n)\)
   \end{itemize}
+\end{frame}
+
+\subsection{Work Analysis}
+
+\begin{frame}{Expected Sum of Dependency Chains}
+  \begin{theorem}[Sum of Dependency Chains]
+    Let \(W_n(k)\) denote the sum of the dependency chains starting at indices
+    \(1, 2, \dots, k\).
+    \[ W_n(k) = \O\left(k \log\left(\frac{n}{n-k}\right)\right) \] 
+  \end{theorem}
+\end{frame}
+
+\begin{frame}{Expected Sum of Dependency Chains}
+  By definition,
+  \begin{proofs}
+    \begin{alignat*}{5}
+      &W_n(k) &&= \Lb(1) &&+\Lb(2) &&+\cdots &&+ \Lb(k) \\
+      &       &&= \frac{1}{n} + \Lb(2) &&+ \frac{1}{n-1} + \Lb(3) &&+ \cdots &&+ \Lb(k) \\
+      &       &&\ \ \vdots \\ 
+      &       &&= \frac{1}{n} &&+ \frac{2}{n-1} &&+ \cdots &&+ \frac{k-1}{n+1-k} \\
+    \end{alignat*}
+  \end{proofs}
+\end{frame}
+
+\begin{frame}{Expected Sum of Dependency Chains}
+  \begin{proof}
+    Continuing,
+    \[
+      \begin{aligned}
+        W_n(k) &= \sum_{i=1}^{k-1} H_i - (k-1)H_{n+1-k} \\ 
+               &\leq (k-1)H_n - (k-1)H_{n+1-k} \\ 
+               &= (k-1)(H_n - H_{n+1-k}) \\ 
+               &< k(\ln n - \ln(n-k)) = \O\left(k \log\left(\frac{n}{n-k}\right)\right) 
+      \end{aligned}
+    \]
+  \end{proof}
+\end{frame}
+
+\begin{frame}{Expected Sum of Dependency Chains}
+  Implications:
+  \begin{itemize}
+    \item With early termination, work is \(\O\left(k \log\left(\frac{n}{n-k}\right)\right)\)
+    \item If \(k \ll n\), work \(\to \O(k)\)
+    \item If \(k \approx n\), work \(\to \O(n \log n)\)
+      \begin{itemize}
+        \item \textit{Possible} to claim that work \(\to \O(n)\)
+        \item Could not quantify how the chains join later on
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{But is it really better?}
+  \centering
+  \textit{Time to get empirical!}
 \end{frame}
