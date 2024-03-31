@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, marker::PhantomData};
+use std::{collections::HashSet, marker::PhantomData};
 
 use rand::Rng;
 
@@ -10,21 +10,19 @@ pub struct NaiveSampler<T: Clone + Sized + Send + Sync> {
 
 impl<T: Clone + Sized + Send + Sync> Sampler<T> for NaiveSampler<T> {
     fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
-        let mut working_arr = arr.to_vec();
-        match k.cmp(&arr.len()) {
-            Ordering::Greater => None,
-            _ => {
-                let mut rng = rand::thread_rng();
-                let mut ans = Vec::with_capacity(k);
-                for _ in 0..k {
-                    let idx = rng.gen_range(0..working_arr.len());
-                    let to_remove = working_arr.remove(idx);
-                    ans.push(to_remove);
-                }
+        let mut ans = Vec::with_capacity(k);
+        let mut idx_left: HashSet<usize> = (0..arr.len()).collect();
+        let mut rng = rand::thread_rng();
 
-                Some(ans)
+        while ans.len() < k {
+            let idx = rng.gen_range(0..arr.len());
+            if idx_left.contains(&idx) {
+                ans.push(arr[idx].clone());
+                idx_left.remove(&idx);
             }
         }
+
+        Some(ans)
     }
 }
 
