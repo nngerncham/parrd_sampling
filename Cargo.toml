@@ -9,8 +9,20 @@ edition = "2021"
 common_traits = "0.10.2"
 fxhash = "0.2.1"
 generic-array = "1.0.0"
-polyval = "0.6.2"
 rand = "0.8.5"
 rayon = "1.9.0"
-to_bytes = "0.1.0"
-universal-hash = "0.5.1"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "single_core"
+harness = false
+
+[[bench]]
+name = "multi_core"
+harness = false
+
+[[bench]]
+name = "multi_core_ht"
+harness = false

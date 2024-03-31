@@ -6,7 +6,7 @@ use crate::utils::{cwslice::UnsafeSlice, prefix_scan::par_scan};
 use core::hash::Hash;
 use std::{cmp::Ordering, marker::PhantomData, usize};
 
-struct PrioritySampler<T: Clone + Hash + Sized + Send + Sync> {
+pub struct PrioritySampler<T: Clone + Hash + Sized + Send + Sync> {
     marker: PhantomData<T>,
 }
 

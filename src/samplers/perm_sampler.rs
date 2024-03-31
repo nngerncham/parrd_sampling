@@ -149,10 +149,14 @@ mod test {
     #[test]
     fn perm_par_is_seq_small_early() {
         seq_par_perm_eq_test(20, 10);
+        seq_par_perm_eq_test(20, 10);
+        seq_par_perm_eq_test(20, 10);
     }
 
     #[test]
     fn perm_par_is_seq_small_full() {
+        seq_par_perm_eq_test(20, 20);
+        seq_par_perm_eq_test(20, 20);
         seq_par_perm_eq_test(20, 20);
     }
 
@@ -161,11 +165,15 @@ mod test {
         let n = 10_000_000;
         let k = 500_000;
         seq_par_perm_eq_test(n, k);
+        seq_par_perm_eq_test(n, k);
+        seq_par_perm_eq_test(n, k);
     }
 
     #[test]
     fn perm_par_is_seq_full() {
         let n = 10_000_000;
+        seq_par_perm_eq_test(n, n);
+        seq_par_perm_eq_test(n, n);
         seq_par_perm_eq_test(n, n);
     }
 }
