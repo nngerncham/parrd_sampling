@@ -8,7 +8,7 @@ use crate::samplers::{
 };
 
 const REPEATS: usize = 3;
-const PROBLEM_SIZE: usize = 50_000_000;
+const PROBLEM_SIZE: usize = 40_000_000;
 
 pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -> Result<()> {
     let bench_start = std::time::Instant::now();
