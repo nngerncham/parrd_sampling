@@ -122,7 +122,7 @@ mod test {
         use super::PrioritySampler;
         use crate::samplers::sampl_interface::Sampler;
 
-        let k = 50_000;
+        let k = 500_000;
         let sample_size = 10_000_000;
         let population = (0..sample_size)
             .map(|_| rand::random::<i32>())

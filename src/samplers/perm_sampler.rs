@@ -87,7 +87,8 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
 
         // pack things together for next round
         let (failed_count, pack_locs) = par_scan(&fail_commits);
-        let mut new_idx_remaining = vec![0usize; failed_count];
+        let mut new_idx_remaining =
+            vec![0usize; idx_remaining.len() - (pack_locs.len() - failed_count)];
         let new_idx_remaining_slice = UnsafeSlice::new(&mut new_idx_remaining);
         idx_remaining
             .par_iter()
@@ -102,13 +103,20 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
                     }
                 }
             });
+        if prefix_size <= idx_remaining.len() {
+            idx_remaining[prefix_size..]
+                .par_iter()
+                .enumerate()
+                .for_each(|(i, &idx)| {
+                    reservation[swap_targets[idx]].store(n, AtomicOrdering::Release);
+                    unsafe {
+                        new_idx_remaining_slice.write(failed_count + i, idx);
+                    }
+                });
+        }
 
-        // new # successful += # processed - # failed
         idx_remaining = new_idx_remaining;
         prefix_size = (idx_remaining.len() / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
-        // println!("{:?}", &swap_targets);
-        // println!("{:?}", &reservation);
-        // println!("{:?}", &idx_remaining);
     }
 
     Some(ans[..k].to_vec())
@@ -123,23 +131,11 @@ impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PermutationSampler<T>
 }
 
 mod test {
-    #[test]
-    fn swap_generation() {
-        let n = 1_000_000;
-        let swap_targets = super::generate_swaps(n);
-        assert!(swap_targets
-            .iter()
-            .enumerate()
-            .all(|(i, &target)| i <= target && target < n));
-    }
-
-    #[test]
-    fn perm_par_is_seq_small() {
+    #[allow(dead_code)]
+    fn seq_par_perm_eq_test(n: usize, k: usize) {
         use rand::thread_rng;
         use rand::Rng;
 
-        let n = 20;
-        let k = 10;
         let mut rng = thread_rng();
         let swap_targets: Vec<usize> = (0..n).map(|i| rng.gen_range(i..n)).collect();
         let xs: Vec<usize> = (0..n).collect();
@@ -147,16 +143,29 @@ mod test {
         let seq_result = super::knuth_shuffle(&xs, k, &swap_targets);
         let par_result = super::par_permute_k(&xs, k, &swap_targets).unwrap();
 
-        println!("{:?}", &swap_targets);
-        // println!(
-        //     "{:?}",
-        //     &(seq_result
-        //         .iter()
-        //         .zip(&par_result)
-        //         .map(|(&a, &b)| (a, b))
-        //         .collect::<Vec<(usize, usize)>>())
-        // );
-
         assert_eq!(&seq_result, &par_result);
+    }
+
+    #[test]
+    fn perm_par_is_seq_small_early() {
+        seq_par_perm_eq_test(20, 10);
+    }
+
+    #[test]
+    fn perm_par_is_seq_small_full() {
+        seq_par_perm_eq_test(20, 20);
+    }
+
+    #[test]
+    fn perm_par_is_seq_early() {
+        let n = 10_000_000;
+        let k = 500_000;
+        seq_par_perm_eq_test(n, k);
+    }
+
+    #[test]
+    fn perm_par_is_seq_full() {
+        let n = 10_000_000;
+        seq_par_perm_eq_test(n, n);
     }
 }
