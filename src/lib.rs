@@ -1,2 +1,2 @@
 pub mod samplers;
-mod utils;
+pub mod utils;

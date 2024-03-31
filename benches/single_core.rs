@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use parrd_sampling::samplers::{
     naive_sampler::NaiveSampler, perm_sampler::PermutationSampler,
-    priority_sampler::PrioritySampler, sampl_interface::Sampler,
+    priority_sampler::ParPrioritySampler, sampl_interface::Sampler,
 };
 
 pub fn bench_single_core(c: &mut Criterion) {
@@ -24,7 +24,7 @@ pub fn bench_single_core(c: &mut Criterion) {
 
         c.bench_function(
             &format!("SinglePriority{}", (percentage * 100f32) as usize),
-            |b| b.iter(|| PrioritySampler::sample(&population, k)),
+            |b| b.iter(|| ParPrioritySampler::sample(&population, k)),
         );
 
         c.bench_function(
