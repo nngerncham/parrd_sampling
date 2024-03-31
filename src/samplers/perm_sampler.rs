@@ -15,8 +15,15 @@ use crate::{
 
 const PREFIX_DIVISOR: usize = 100;
 
+fn generate_swaps(n: usize) -> Vec<usize> {
+    (0..n) // H in the J. Shun paper
+        .into_par_iter()
+        .map_init(rand::thread_rng, |rng, i| rng.gen_range(i..n))
+        .collect::<Vec<usize>>()
+}
+
 #[allow(dead_code)]
-pub fn knuth_shuffle(arr: &[usize], k: usize, swap_targets: &[usize]) -> Vec<usize> {
+fn knuth_shuffle<T: Clone + Sized>(arr: &[T], k: usize, swap_targets: &[usize]) -> Vec<T> {
     let mut ans = arr.to_vec();
     swap_targets
         .iter()
@@ -27,18 +34,7 @@ pub fn knuth_shuffle(arr: &[usize], k: usize, swap_targets: &[usize]) -> Vec<usi
     ans[..k].to_vec()
 }
 
-pub struct PermutationSampler<T: Clone + Sized + Send + Sync> {
-    marker: PhantomData<T>,
-}
-
-fn generate_swaps(n: usize) -> Vec<usize> {
-    (0..n) // H in the J. Shun paper
-        .into_par_iter()
-        .map_init(rand::thread_rng, |rng, i| rng.gen_range(i..n))
-        .collect::<Vec<usize>>()
-}
-
-pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
+fn par_permute_k<T: Clone + Sized + Send + Sync>(
     arr: &[T],
     k: usize,
     swap_targets: &[usize],
@@ -122,7 +118,22 @@ pub fn par_permute_k<T: Clone + Sized + Send + Sync>(
     Some(ans[..k].to_vec())
 }
 
-impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PermutationSampler<T> {
+pub struct SeqPermutationSampler<T: Clone + Sized> {
+    marker: PhantomData<T>,
+}
+
+impl<T: Clone + Hash + Sized> Sampler<T> for SeqPermutationSampler<T> {
+    fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
+        let swap_targets = generate_swaps(arr.len());
+        Some(knuth_shuffle(arr, k, &swap_targets))
+    }
+}
+
+pub struct PermutationSampler<T: Clone + Sized + Send + Sync> {
+    marker: PhantomData<T>,
+}
+
+impl<T: Clone + Sized + Send + Sync> Sampler<T> for PermutationSampler<T> {
     fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
         let n = arr.len();
         let swap_targets = generate_swaps(n);
