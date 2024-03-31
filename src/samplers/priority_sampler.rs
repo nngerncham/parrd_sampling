@@ -1,3 +1,4 @@
+use fxhash::FxHasher64;
 use rand::{rngs::ThreadRng, Rng};
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
@@ -6,8 +7,29 @@ use crate::utils::{cwslice::UnsafeSlice, prefix_scan::par_scan};
 use core::hash::Hash;
 use std::{cmp::Ordering, marker::PhantomData, usize};
 
-pub struct PrioritySampler<T: Clone + Hash + Sized + Send + Sync> {
-    marker: PhantomData<T>,
+fn quick_select<T: Clone + Hash + Sized>(xs: &[T], k: usize, rng: &mut ThreadRng) -> T {
+    let n = xs.len();
+    let pivot_idx = rng.gen_range(0..n);
+    let pivot_hash = fxhash::hash64(&xs[pivot_idx]);
+
+    let leq_elements: Vec<T> = xs
+        .iter()
+        .filter(|x| fxhash::hash64(x) <= pivot_hash)
+        .cloned()
+        .collect();
+
+    match leq_elements.len().cmp(&k) {
+        Ordering::Equal => xs[pivot_idx].clone(),
+        Ordering::Greater => quick_select(&leq_elements, k, rng),
+        _ => {
+            let gt_elements: Vec<T> = xs
+                .iter()
+                .filter(|x| fxhash::hash64(&x) > pivot_hash)
+                .cloned()
+                .collect();
+            quick_select(&gt_elements, k - leq_elements.len(), rng)
+        }
+    }
 }
 
 fn par_quick_select<T: Clone + Hash + Sized + Send + Sync>(
@@ -66,6 +88,35 @@ fn par_quick_select<T: Clone + Hash + Sized + Send + Sync>(
             par_quick_select(&right, k - leq_count, rng)
         }
     }
+}
+
+pub struct SeqPrioritySampler<T: Clone + Hash + Sized + Send + Sync> {
+    marker: PhantomData<T>,
+}
+
+impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for SeqPrioritySampler<T> {
+    fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
+        match arr.len().cmp(&k) {
+            Ordering::Less => return None,
+            Ordering::Equal => return Some(arr.to_vec()),
+            Ordering::Greater => {}
+        }
+
+        let mut rng = rand::thread_rng();
+        let kth_element = quick_select(arr, k, &mut rng);
+        let kth_hash = fxhash::hash64(&kth_element);
+
+        Some(
+            arr.iter()
+                .filter(|x| fxhash::hash64(x) <= kth_hash)
+                .cloned()
+                .collect(),
+        )
+    }
+}
+
+pub struct PrioritySampler<T: Clone + Hash + Sized + Send + Sync> {
+    marker: PhantomData<T>,
 }
 
 impl<T: Clone + Hash + Sized + Send + Sync> Sampler<T> for PrioritySampler<T> {

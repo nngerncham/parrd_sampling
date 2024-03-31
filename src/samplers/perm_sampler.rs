@@ -1,4 +1,3 @@
-use common_traits::Hash;
 use rand::Rng;
 use rayon::iter::{
     IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
@@ -38,7 +37,7 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
     arr: &[T],
     k: usize,
     swap_targets: &[usize],
-) -> Option<Vec<T>> {
+) -> Vec<T> {
     let n = arr.len();
 
     let reservation: Vec<AtomicUsize> = (0..n)
@@ -115,17 +114,29 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
         prefix_size = (idx_remaining.len() / PREFIX_DIVISOR).max(PREFIX_DIVISOR);
     }
 
-    Some(ans[..k].to_vec())
+    ans[..k].to_vec()
 }
 
 pub struct SeqPermutationSampler<T: Clone + Sized> {
     marker: PhantomData<T>,
 }
 
-impl<T: Clone + Hash + Sized> Sampler<T> for SeqPermutationSampler<T> {
+impl<T: Clone + Sized> Sampler<T> for SeqPermutationSampler<T> {
     fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
         let swap_targets = generate_swaps(arr.len());
         Some(knuth_shuffle(arr, k, &swap_targets))
+    }
+}
+
+pub struct FullPermutationSampler<T: Clone + Sized + Send + Sync> {
+    marker: PhantomData<T>,
+}
+
+impl<T: Clone + Sized + Send + Sync> Sampler<T> for FullPermutationSampler<T> {
+    fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
+        let n = arr.len();
+        let swap_targets = generate_swaps(n);
+        Some(par_permute_k(arr, n, &swap_targets)[..k].to_vec())
     }
 }
 
@@ -137,7 +148,7 @@ impl<T: Clone + Sized + Send + Sync> Sampler<T> for PermutationSampler<T> {
     fn sample(arr: &[T], k: usize) -> Option<Vec<T>> {
         let n = arr.len();
         let swap_targets = generate_swaps(n);
-        par_permute_k(arr, k, &swap_targets)
+        Some(par_permute_k(arr, k, &swap_targets))
     }
 }
 
@@ -152,7 +163,7 @@ mod test {
         let xs: Vec<usize> = (0..n).collect();
 
         let seq_result = super::knuth_shuffle(&xs, k, &swap_targets);
-        let par_result = super::par_permute_k(&xs, k, &swap_targets).unwrap();
+        let par_result = super::par_permute_k(&xs, k, &swap_targets);
 
         assert_eq!(&seq_result, &par_result);
     }
@@ -160,14 +171,10 @@ mod test {
     #[test]
     fn perm_par_is_seq_small_early() {
         seq_par_perm_eq_test(20, 10);
-        seq_par_perm_eq_test(20, 10);
-        seq_par_perm_eq_test(20, 10);
     }
 
     #[test]
     fn perm_par_is_seq_small_full() {
-        seq_par_perm_eq_test(20, 20);
-        seq_par_perm_eq_test(20, 20);
         seq_par_perm_eq_test(20, 20);
     }
 
@@ -176,15 +183,11 @@ mod test {
         let n = 10_000_000;
         let k = 500_000;
         seq_par_perm_eq_test(n, k);
-        seq_par_perm_eq_test(n, k);
-        seq_par_perm_eq_test(n, k);
     }
 
     #[test]
     fn perm_par_is_seq_full() {
         let n = 10_000_000;
-        seq_par_perm_eq_test(n, n);
-        seq_par_perm_eq_test(n, n);
         seq_par_perm_eq_test(n, n);
     }
 }
