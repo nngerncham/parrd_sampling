@@ -7,8 +7,8 @@ use crate::samplers::{
     sampl_interface::Sampler,
 };
 
-const REPEATS: usize = 3;
-const PROBLEM_SIZE: usize = 40_000_000;
+const REPEATS: usize = 15;
+const PROBLEM_SIZE: usize = 30_000_000;
 
 pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -> Result<()> {
     let bench_start = std::time::Instant::now();
@@ -39,7 +39,7 @@ pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -
                 &k.to_string(),
                 &repeat.to_string(),
                 "i32",
-                &end.as_micros().to_string(),
+                &end.as_millis().to_string(),
             ])?;
 
             println!("SeqPriority {}", repeat + 1);
@@ -53,7 +53,7 @@ pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -
                 &k.to_string(),
                 &repeat.to_string(),
                 "i32",
-                &end.as_micros().to_string(),
+                &end.as_millis().to_string(),
             ])?;
 
             println!("ParPriority {}", repeat + 1);
@@ -67,7 +67,7 @@ pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -
                 &k.to_string(),
                 &repeat.to_string(),
                 "i32",
-                &end.as_micros().to_string(),
+                &end.as_millis().to_string(),
             ])?;
 
             println!("SeqPermutation {}", repeat + 1);
@@ -81,7 +81,7 @@ pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -
                 &k.to_string(),
                 &repeat.to_string(),
                 "i32",
-                &end.as_micros().to_string(),
+                &end.as_millis().to_string(),
             ])?;
 
             println!("FullPermutation {}", repeat + 1);
@@ -95,7 +95,7 @@ pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -
                 &k.to_string(),
                 &repeat.to_string(),
                 "i32",
-                &end.as_micros().to_string(),
+                &end.as_millis().to_string(),
             ])?;
 
             println!("ParPermutation {}", repeat + 1);
@@ -109,7 +109,7 @@ pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -
                 &k.to_string(),
                 &repeat.to_string(),
                 "i32",
-                &end.as_micros().to_string(),
+                &end.as_millis().to_string(),
             ])?;
         }
     }
