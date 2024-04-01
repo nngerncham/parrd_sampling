@@ -45,8 +45,8 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
         .map(|_| AtomicUsize::new(n))
         .collect(); // init'd as -1 in paper but I can't see the point
     let reserve = |i: usize| {
-        reservation[i].fetch_min(i, AtomicOrdering::AcqRel);
-        reservation[swap_targets[i]].fetch_min(i, AtomicOrdering::AcqRel);
+        reservation[i].fetch_min(i, AtomicOrdering::Relaxed);
+        reservation[swap_targets[i]].fetch_min(i, AtomicOrdering::Relaxed);
     };
 
     let mut ans = arr.to_vec();
@@ -54,8 +54,8 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
     let commit = |i: usize| -> usize {
         let swap_idx = swap_targets[i];
         unsafe {
-            if reservation[i].load(AtomicOrdering::Acquire) == i
-                && reservation[swap_idx].load(AtomicOrdering::Acquire) == i
+            if reservation[i].load(AtomicOrdering::Relaxed) == i
+                && reservation[swap_idx].load(AtomicOrdering::Relaxed) == i
             {
                 ans_slice.swap(i, swap_idx);
                 0
@@ -90,8 +90,8 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
             .enumerate()
             .take(prefix_size)
             .for_each(|(i, &idx)| {
-                // reservation[idx].store(n, AtomicOrdering::Release);
-                reservation[swap_targets[idx]].store(n, AtomicOrdering::Release);
+                // reservation[idx].store(n, AtomicOrdering::Relaxed);
+                reservation[swap_targets[idx]].store(n, AtomicOrdering::Relaxed);
                 if fail_commits[i] == 1 {
                     unsafe {
                         new_idx_remaining_slice.write(pack_locs[i], idx);
@@ -103,7 +103,7 @@ fn par_permute_k<T: Clone + Sized + Send + Sync>(
                 .par_iter()
                 .enumerate()
                 .for_each(|(i, &idx)| {
-                    reservation[swap_targets[idx]].store(n, AtomicOrdering::Release);
+                    reservation[swap_targets[idx]].store(n, AtomicOrdering::Relaxed);
                     unsafe {
                         new_idx_remaining_slice.write(failed_count + i, idx);
                     }
