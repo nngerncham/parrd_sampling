@@ -7,7 +7,7 @@ use crate::samplers::{
     sampl_interface::Sampler,
 };
 
-const REPEATS: usize = 15;
+const REPEATS: usize = 10;
 const PROBLEM_SIZE: usize = 30_000_000;
 
 pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -> Result<()> {
@@ -28,19 +28,21 @@ pub fn benchmark_core(wtr: &mut csv::Writer<std::fs::File>, core_count: usize) -
         println!("Benchmarking with k = {}", k);
 
         for repeat in 0..REPEATS {
-            println!("Naive {}", repeat + 1);
-            let start = std::time::Instant::now();
-            let _ = NaiveSampler::sample(&data, k);
-            let end = std::time::Instant::now().duration_since(start);
-            wtr.write_record([
-                "Naive",
-                &core_count.to_string(),
-                &PROBLEM_SIZE.to_string(),
-                &k.to_string(),
-                &repeat.to_string(),
-                "i32",
-                &end.as_millis().to_string(),
-            ])?;
+            if core_count > 1 {
+                println!("Naive {}", repeat + 1);
+                let start = std::time::Instant::now();
+                let _ = NaiveSampler::sample(&data, k);
+                let end = std::time::Instant::now().duration_since(start);
+                wtr.write_record([
+                    "Naive",
+                    &core_count.to_string(),
+                    &PROBLEM_SIZE.to_string(),
+                    &k.to_string(),
+                    &repeat.to_string(),
+                    "i32",
+                    &end.as_millis().to_string(),
+                ])?;
+            }
 
             println!("SeqPriority {}", repeat + 1);
             let start = std::time::Instant::now();
