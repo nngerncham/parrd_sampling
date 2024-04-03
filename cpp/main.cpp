@@ -1,12 +1,14 @@
 #include "parlay/primitives.h"
 #include "parlay/sequence.h"
+
+#include "samplers/sampler_model.cpp"
+
 #include <iostream>
+#include <vector>
 
 int main(int argc, char *argv[]) {
-  auto arr = parlay::tabulate(100, [](int i) { return i; });
-  for (int i = 0; i < 100; i++) {
-    std::cout << arr[i] << " ";
-  }
-  std::cout << "\n";
+  std::vector<int> data = {1, 2, 3, 4, 5};
+  std::vector<int> sample = Sampler<int>::sample(data, 3);
+  std::cout << sample.size() << "\n";
   return 0;
 }
