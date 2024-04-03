@@ -1,4 +1,5 @@
 #include "samplers/naive_sampler.h"
+#include "samplers/permutation_sampler.h"
 #include "samplers/priority_sampler.h"
 
 #include <iostream>
@@ -22,6 +23,13 @@ int main(int argc, char *argv[]) {
   std::vector<int> par_priority_sample =
       ParPrioritySampler<int>::sample(data, 5);
   for (auto e : par_priority_sample) {
+    std::cout << e << " ";
+  }
+  std::cout << "\n";
+
+  std::vector<int> permutation_sample =
+      SeqPermutationSampler<int>::sample(data, 5);
+  for (auto e : permutation_sample) {
     std::cout << e << " ";
   }
   std::cout << "\n";
