@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 
 template <typename DataType> class Sampler {
