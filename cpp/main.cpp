@@ -34,5 +34,12 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "\n";
 
+  std::vector<int> par_permutation_sample =
+      ParPermutationSampler<int>::sample(data, 5);
+  for (auto e : par_permutation_sample) {
+    std::cout << e << " ";
+  }
+  std::cout << "\n";
+
   return 0;
 }
