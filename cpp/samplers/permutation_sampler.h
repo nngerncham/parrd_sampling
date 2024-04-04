@@ -103,10 +103,12 @@ public:
         new_idx_left.append(idx_left.tail(idx_left.size() - to_reserve_size));
       }
 
+      // update reservations for next round, required!!
       parlay::parallel_for(0, to_reserve_size, [&](size_t i) {
         size_t idx = idx_left[i];
         reservations[swap_target[idx]].store(n);
       });
+
       idx_left = new_idx_left;
       prefix_size =
           std::max<size_t>(idx_left.size() / PREFIX_DIVISOR, PREFIX_DIVISOR);
