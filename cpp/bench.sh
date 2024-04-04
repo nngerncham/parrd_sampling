@@ -5,4 +5,4 @@ cmake --build build/
 ./build/benchmark/g_benchmark \
 	--benchmark_out_format=json \
 	--benchmark_out=benchmark_results.json \
-	benchmark_time_unit=ms
+	--benchmark_time_unit=ms
