@@ -36,9 +36,8 @@ public:
     return ans;
   }
 
-private:
   void static permute(std::vector<DataType> &arr, size_t iters,
-                      std::vector<size_t> swap_target) {
+                      std::vector<size_t> &swap_target) {
     for (size_t i = 0; i < iters; i++) {
       std::swap(arr[i], arr[swap_target[i]]);
     }
@@ -49,7 +48,6 @@ template <typename DataType> class ParPermutationSampler : Sampler<DataType> {
 public:
   std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
     size_t n = data.size();
-    std::vector<DataType> ans(data);
 
     // generates swap targets
     parlay::random_generator gen(time(NULL));
@@ -61,6 +59,15 @@ public:
         });
 
     // reserve and commit
+    std::vector<DataType> ans(data);
+    permute(ans, k, swap_target);
+    ans.resize(k);
+    return ans;
+  }
+
+  void static permute(std::vector<DataType> &ans, size_t k,
+                      parlay::sequence<size_t> &swap_target) {
+    size_t n = ans.size();
     parlay::sequence<std::atomic_size_t> reservations =
         parlay::tabulate(n, [&](size_t i) { return std::atomic_size_t(n); });
     auto reserve = [&](size_t i) {
@@ -104,9 +111,6 @@ public:
       prefix_size =
           std::max<size_t>(idx_left.size() / PREFIX_DIVISOR, PREFIX_DIVISOR);
     }
-
-    ans.resize(k);
-    return ans;
   }
 
 private:
