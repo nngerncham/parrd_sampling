@@ -78,6 +78,7 @@ public:
       size_t swap_idx = swap_target[i];
       if (reservations[i].load() == i && reservations[swap_idx].load() == i) {
         std::swap(ans[i], ans[swap_idx]);
+        reservations[swap_idx].store(n);
         return false;
       } else {
         return true;
@@ -103,12 +104,6 @@ public:
         new_idx_left.append(idx_left.tail(idx_left.size() - to_reserve_size));
       }
 
-      // update reservations for next round, required!!
-      parlay::parallel_for(0, to_reserve_size, [&](size_t i) {
-        size_t idx = idx_left[i];
-        reservations[swap_target[idx]].store(n);
-      });
-
       idx_left = new_idx_left;
       prefix_size =
           std::max<size_t>(idx_left.size() / PREFIX_DIVISOR, PREFIX_DIVISOR);
@@ -121,5 +116,27 @@ private:
     while (new_value < current_value &&
            !var.compare_exchange_weak(current_value, new_value)) {
     }
+  }
+};
+
+template <typename DataType>
+class ParPermutationFullSampler : public ParPermutationSampler<DataType> {
+public:
+  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+    size_t n = data.size();
+
+    // generates swap targets
+    parlay::random_generator gen(time(NULL));
+    parlay::sequence<size_t> swap_target =
+        parlay::tabulate(data.size(), [&](size_t i) {
+          std::uniform_int_distribution<size_t> dis(i, n - 1);
+          auto r = gen[i];
+          return dis(r);
+        });
+
+    std::vector<DataType> ans(data);
+    ParPermutationSampler<DataType>::permute(ans, n, swap_target);
+    ans.resize(k);
+    return ans;
   }
 };

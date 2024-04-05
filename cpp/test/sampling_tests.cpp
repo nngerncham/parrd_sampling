@@ -43,7 +43,7 @@ TEST_CASE("Parallel Permutation outputs the same as Sequential Permutation",
   srand(time(NULL));
 
   // generate data
-  size_t n = 10'000;
+  size_t n = 100'000;
   std::vector<int> data1;
   std::vector<int> data2;
   for (size_t i = 0; i < n; i++) {
@@ -53,7 +53,7 @@ TEST_CASE("Parallel Permutation outputs the same as Sequential Permutation",
   }
 
   // sequential swap targets
-  size_t swap_target_size = 100;
+  size_t swap_target_size = 1000;
   std::vector<size_t> swap_targets;
   parlay::sequence<size_t> swap_targets_par;
 

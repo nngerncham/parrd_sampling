@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <vector>
 
-#define PROBLEM_SIZE 30'000'000
+#define PROBLEM_SIZE 50'000'000
 #define K10 (PROBLEM_SIZE / 100 * 10)
 #define K25 (PROBLEM_SIZE / 100 * 25)
 #define K50 (PROBLEM_SIZE / 100 * 50)
@@ -63,11 +63,11 @@ static void BM_naive_sampler_k90(benchmark::State &state) {
   }
 }
 
-BENCHMARK(BM_naive_sampler_k10)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_naive_sampler_k25)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_naive_sampler_k50)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_naive_sampler_k75)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_naive_sampler_k90)->Threads(1)->Threads(12)->Threads(24);
+BENCHMARK(BM_naive_sampler_k10)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_naive_sampler_k25)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_naive_sampler_k50)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_naive_sampler_k75)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_naive_sampler_k90)->Threads(1)->Threads(12)->UseRealTime();
 
 // =========== SEQ PRIORITY SAMPLER ============
 static void BM_seq_priority_sampler_k10(benchmark::State &state) {
@@ -105,11 +105,31 @@ static void BM_seq_priority_sampler_k90(benchmark::State &state) {
   }
 }
 
-BENCHMARK(BM_seq_priority_sampler_k10)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_priority_sampler_k25)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_priority_sampler_k50)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_priority_sampler_k75)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_priority_sampler_k90)->Threads(1)->Threads(12)->Threads(24);
+BENCHMARK(BM_seq_priority_sampler_k10)
+    ->Threads(1)
+    ->Threads(12)
+
+    ->UseRealTime();
+BENCHMARK(BM_seq_priority_sampler_k25)
+    ->Threads(1)
+    ->Threads(12)
+
+    ->UseRealTime();
+BENCHMARK(BM_seq_priority_sampler_k50)
+    ->Threads(1)
+    ->Threads(12)
+
+    ->UseRealTime();
+BENCHMARK(BM_seq_priority_sampler_k75)
+    ->Threads(1)
+    ->Threads(12)
+
+    ->UseRealTime();
+BENCHMARK(BM_seq_priority_sampler_k90)
+    ->Threads(1)
+    ->Threads(12)
+
+    ->UseRealTime();
 
 // =========== PAR PRIORITY SAMPLER ============
 static void BM_par_priority_sampler_k10(benchmark::State &state) {
@@ -147,11 +167,11 @@ static void BM_par_priority_sampler_k90(benchmark::State &state) {
   }
 }
 
-BENCHMARK(BM_par_priority_sampler_k10)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_priority_sampler_k25)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_priority_sampler_k50)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_priority_sampler_k75)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_priority_sampler_k90)->Threads(1)->Threads(12)->Threads(24);
+BENCHMARK(BM_par_priority_sampler_k10)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_par_priority_sampler_k25)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_par_priority_sampler_k50)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_par_priority_sampler_k75)->Threads(1)->Threads(12)->UseRealTime();
+BENCHMARK(BM_par_priority_sampler_k90)->Threads(1)->Threads(12)->UseRealTime();
 
 // =========== SEQ PERMUTATION SAMPLER ============
 static void BM_seq_permutation_sampler_k10(benchmark::State &state) {
@@ -189,11 +209,26 @@ static void BM_seq_permutation_sampler_k90(benchmark::State &state) {
   }
 }
 
-BENCHMARK(BM_seq_permutation_sampler_k10)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_permutation_sampler_k25)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_permutation_sampler_k50)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_permutation_sampler_k75)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_seq_permutation_sampler_k90)->Threads(1)->Threads(12)->Threads(24);
+BENCHMARK(BM_seq_permutation_sampler_k10)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_seq_permutation_sampler_k25)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_seq_permutation_sampler_k50)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_seq_permutation_sampler_k75)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_seq_permutation_sampler_k90)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
 
 // =========== PAR PERMUTATION SAMPLER ============
 static void BM_par_permutation_sampler_k10(benchmark::State &state) {
@@ -231,10 +266,25 @@ static void BM_par_permutation_sampler_k90(benchmark::State &state) {
   }
 }
 
-BENCHMARK(BM_par_permutation_sampler_k10)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_permutation_sampler_k25)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_permutation_sampler_k50)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_permutation_sampler_k75)->Threads(1)->Threads(12)->Threads(24);
-BENCHMARK(BM_par_permutation_sampler_k90)->Threads(1)->Threads(12)->Threads(24);
+BENCHMARK(BM_par_permutation_sampler_k10)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_par_permutation_sampler_k25)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_par_permutation_sampler_k50)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_par_permutation_sampler_k75)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_par_permutation_sampler_k90)
+    ->Threads(1)
+    ->Threads(12)
+    ->UseRealTime();
 
 BENCHMARK_MAIN();
