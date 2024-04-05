@@ -3,6 +3,7 @@
 #include "samplers/priority_sampler.h"
 
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -15,9 +16,10 @@
 #define REPS 5
 
 void benchmark(std::ofstream &wtr, size_t num_threads) {
-  std::vector<size_t> k_percents = {10, 25, 50, 75, 90};
-  for (auto k_percent : k_percents) {
-    size_t k = N / 100 * k_percent;
+  std::vector<size_t> k_percents = {
+      (size_t)log2(N), (size_t)sqrt(N), N / 100 * 10, N / 100 * 25,
+      N / 100 * 50,    N / 100 * 75,    N / 100 * 90};
+  for (auto k : k_percents) {
     std::cout << "\nBenchmarking with k = " << k << std::endl;
 
     for (size_t repeat = 0; repeat < REPS; repeat++) {
@@ -34,7 +36,7 @@ void benchmark(std::ofstream &wtr, size_t num_threads) {
       auto elapsed_naive =
           std::chrono::duration_cast<std::chrono::microseconds>(end_naive -
                                                                 start_naive);
-      wtr << "Naive," << k_percent << "," << num_threads << ","
+      wtr << "Naive," << k << "," << num_threads << ","
           << std::to_string(elapsed_naive.count()) << "," << repeat << "\n";
 
       std::cout << "SeqPriority " << k << std::endl;
@@ -44,7 +46,7 @@ void benchmark(std::ofstream &wtr, size_t num_threads) {
       auto elapsed_seq_priority =
           std::chrono::duration_cast<std::chrono::microseconds>(
               end_seq_priority - start_seq_priority);
-      wtr << "SeqPriority," << k_percent << "," << num_threads << ","
+      wtr << "SeqPriority," << k << "," << num_threads << ","
           << std::to_string(elapsed_seq_priority.count()) << "\n";
 
       std::cout << "ParPriority " << k << std::endl;
@@ -54,7 +56,7 @@ void benchmark(std::ofstream &wtr, size_t num_threads) {
       auto elapsed_par_priority =
           std::chrono::duration_cast<std::chrono::microseconds>(
               end_par_priority - start_par_priority);
-      wtr << "ParPriority," << k_percent << "," << num_threads << ","
+      wtr << "ParPriority," << k << "," << num_threads << ","
           << std::to_string(elapsed_par_priority.count()) << "," << repeat
           << "\n";
 
@@ -65,7 +67,7 @@ void benchmark(std::ofstream &wtr, size_t num_threads) {
       auto elapsed_seq_permutation =
           std::chrono::duration_cast<std::chrono::microseconds>(
               end_seq_permutation - start_seq_permutation);
-      wtr << "SeqPermutation," << k_percent << "," << num_threads << ","
+      wtr << "SeqPermutation," << k << "," << num_threads << ","
           << std::to_string(elapsed_seq_permutation.count()) << "," << repeat
           << "\n";
 
@@ -76,7 +78,7 @@ void benchmark(std::ofstream &wtr, size_t num_threads) {
       auto elapsed_par_permutation =
           std::chrono::duration_cast<std::chrono::microseconds>(
               end_par_permutation - start_par_permutation);
-      wtr << "ParPermutation," << k_percent << "," << num_threads << ","
+      wtr << "ParPermutation," << k << "," << num_threads << ","
           << std::to_string(elapsed_par_permutation.count()) << "," << repeat
           << "\n";
 
@@ -88,7 +90,7 @@ void benchmark(std::ofstream &wtr, size_t num_threads) {
       auto elapsed_par_permutation_full =
           std::chrono::duration_cast<std::chrono::microseconds>(
               end_par_permutation_full - start_par_permutation_full);
-      wtr << "ParPermutationFull," << k_percent << "," << num_threads << ","
+      wtr << "ParPermutationFull," << k << "," << num_threads << ","
           << std::to_string(elapsed_par_permutation_full.count()) << ","
           << repeat << "\n";
     }
@@ -105,7 +107,7 @@ int main(int argc, char *argv[]) {
   std::ofstream results_file;
   std::string file_name = "analysis/" + std::string(argv[2]);
   results_file.open(file_name);
-  results_file << "algo,k%,threads,time(ms),rep\n";
+  results_file << "algo,k,threads,time(ms),rep\n";
   size_t num_threads = atoi(argv[1]);
 
   benchmark(results_file, num_threads);
