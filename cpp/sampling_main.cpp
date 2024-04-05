@@ -28,7 +28,7 @@ void benchmark(std::ofstream &wtr, size_t num_threads) {
   c = 1;
   while (c * sqrt_n < N / 100 * 10) {
     ks.push_back(c * sqrt_n);
-    c += 50;
+    c += 100;
   }
   for (auto k : k_percent) {
     ks.push_back(N / 100 * k);
