@@ -1,4 +1,0 @@
-./build/benchmark/g_benchmark \
-	--benchmark_out_format=json \
-	--benchmark_out=analysis/results.json \
-	--benchmark_time_unit=s

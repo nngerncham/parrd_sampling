@@ -16,10 +16,25 @@
 #define REPS 5
 
 void benchmark(std::ofstream &wtr, size_t num_threads) {
-  std::vector<size_t> k_percents = {
-      (size_t)log2(N), (size_t)sqrt(N), N / 100 * 10, N / 100 * 25,
-      N / 100 * 50,    N / 100 * 75,    N / 100 * 90};
-  for (auto k : k_percents) {
+  // prepping all the ks
+  size_t sqrt_n = sqrt((size_t)N);
+  size_t c = 1;
+  std::vector<size_t> ks;
+  std::vector<size_t> k_percent = {10, 25, 50, 75, 90};
+  while (c * log2(N) < sqrt_n) {
+    ks.push_back(c * log2(N));
+    c += 50;
+  }
+  c = 1;
+  while (c * sqrt_n < N / 100 * 10) {
+    ks.push_back(c * sqrt_n);
+    c += 50;
+  }
+  for (auto k : k_percent) {
+    ks.push_back(N / 100 * k);
+  }
+
+  for (auto k : ks) {
     std::cout << "\nBenchmarking with k = " << k << std::endl;
 
     for (size_t repeat = 0; repeat < REPS; repeat++) {
