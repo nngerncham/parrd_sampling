@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#define N 30'000'000
+#define N 100'000'000
 #define REPS 5
 
 void benchmark(std::ofstream &wtr, size_t num_threads) {
