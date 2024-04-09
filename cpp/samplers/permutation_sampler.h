@@ -44,6 +44,34 @@ public:
   }
 };
 
+template <typename DataType>
+class SeqPermutationFullSampler : Sampler<DataType> {
+public:
+  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::vector<size_t> swap_targets;
+    swap_targets.reserve(data.size());
+    for (size_t i = 0; i < data.size(); i++) {
+      std::uniform_int_distribution<size_t> dis(i, data.size() - 1);
+      swap_targets.push_back(dis(gen));
+    }
+
+    std::vector<DataType> ans(data);
+    permute(ans, data.size(), swap_targets);
+    ans.resize(k);
+    return ans;
+  }
+
+  void static permute(std::vector<DataType> &arr, size_t iters,
+                      std::vector<size_t> &swap_target) {
+    for (size_t i = 0; i < iters; i++) {
+      std::swap(arr[i], arr[swap_target[i]]);
+    }
+  }
+};
+
 template <typename DataType> class ParPermutationSampler : Sampler<DataType> {
 public:
   std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
