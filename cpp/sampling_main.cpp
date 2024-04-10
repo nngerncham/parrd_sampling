@@ -104,7 +104,7 @@ void benchmark(size_t num_threads, std::ofstream &wtr, SamplerType sampler_type,
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   if (rep > 0) {
     wtr << sampler_type_str << "," << k << "," << num_threads << ","
-        << diff.count() << std::endl;
+        << diff.count() << "\n";
   }
 }
 
@@ -117,17 +117,11 @@ int main(int argc, char *argv[]) {
   }
 
   size_t num_threads = atoi(argv[1]);
-
-  std::ofstream results_file;
-  std::string file_name = "analysis/" + std::string(argv[2]);
-  results_file.open(file_name, std::ofstream::app);
-
-  /* results_file << "algo,k,threads,time(ms)\n"; */
+  std::ofstream results_file(std::string(argv[2]), std::ofstream::app);
   SamplerType sampler_type = identify_sampler(argv[3]);
   size_t k = atoi(argv[4]);
   size_t rep = atoi(argv[5]);
 
   benchmark(num_threads, results_file, sampler_type, k, rep);
-  results_file.close();
   return 0;
 }
