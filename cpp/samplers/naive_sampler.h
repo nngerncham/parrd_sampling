@@ -7,7 +7,7 @@
 
 template <typename T> class NaiveSampler : Sampler<T> {
 public:
-  std::vector<T> static sample(const std::vector<T> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> &data, size_t k) {
     size_t n = data.size();
     std::unordered_set<size_t> picked_indexes;
     std::vector<T> sample;

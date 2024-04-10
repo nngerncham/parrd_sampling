@@ -13,7 +13,7 @@
 
 template <typename T> class SeqPrioritySampler : Sampler<T> {
 public:
-  std::vector<T> static sample(const std::vector<T> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> &data, size_t k) {
     time_t seed = time(NULL);
     srand(seed);
     std::vector<int> priority;
@@ -40,7 +40,7 @@ public:
 
 template <typename T> class ParPrioritySampler : Sampler<T> {
 public:
-  std::vector<T> static sample(const std::vector<T> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> &data, size_t k) {
     parlay::random_generator gen(time(NULL));
     std::uniform_int_distribution<int> dis;
     auto priority = parlay::delayed_tabulate(data.size(), [&](size_t i) {
