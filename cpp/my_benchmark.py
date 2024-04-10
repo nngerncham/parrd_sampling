@@ -16,8 +16,6 @@ SAMPLERS = [
 ]
 
 if __name__ == "__main__":
-    os.system("cmake --build build")
-
     for sampler_type in SAMPLERS:
         print(f"\nRunning with {sampler_type} sampler")
 
