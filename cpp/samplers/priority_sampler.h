@@ -43,16 +43,16 @@ public:
   std::vector<T> static sample(const std::vector<T> data, size_t k) {
     parlay::random_generator gen(time(NULL));
     std::uniform_int_distribution<int> dis;
-    parlay::sequence<std::pair<T, int>> priority =
-        parlay::tabulate(data.size(), [&](size_t i) {
-          auto r = gen[i];
-          return std::make_pair(data[i], dis(r));
-        });
+    auto priority = parlay::delayed_tabulate(data.size(), [&](size_t i) {
+      auto r = gen[i];
+      return std::make_pair(data[i], dis(r));
+    });
 
     auto kth_element = parlay::kth_smallest(
         priority, k, [&](auto a, auto b) { return a.second <= b.second; });
-    auto leq = parlay::filter(
-        priority, [&](auto elm) { return elm.second <= kth_element->second; });
+    auto leq = parlay::filter(priority, [&](auto elm) {
+      return elm.second <= kth_element[0].second;
+    });
 
     std::vector<T> sample;
     sample.reserve(k);
