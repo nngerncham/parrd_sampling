@@ -5,12 +5,12 @@
 #include <unordered_set>
 #include <vector>
 
-template <typename DataType> class NaiveSampler : Sampler<DataType> {
+template <typename T> class NaiveSampler : Sampler<T> {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
     size_t n = data.size();
     std::unordered_set<size_t> picked_indexes;
-    std::vector<DataType> sample;
+    std::vector<T> sample;
     sample.reserve(k);
 
     srand(time(NULL));

@@ -1,6 +1,8 @@
+#include "../parlay/delayed_sequence.h"
 #include "../parlay/parallel.h"
 #include "../parlay/primitives.h"
 #include "../parlay/sequence.h"
+#include "../parlay/utilities.h"
 
 #include "sampler_model.h"
 
@@ -15,11 +17,11 @@
 #include <utility>
 #include <vector>
 
-#define PREFIX_DIVISOR 50
+#define PREFIX_DIVISOR 20
 
-template <typename DataType> class SeqPermutationSampler : Sampler<DataType> {
+template <typename T> class SeqPermutationSampler : Sampler<T> {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
     std::random_device rd;
     std::mt19937 gen(rd());
 
@@ -30,13 +32,13 @@ public:
       swap_targets.push_back(dis(gen));
     }
 
-    std::vector<DataType> ans(data);
+    std::vector<T> ans(data);
     permute(ans, k, swap_targets);
     ans.resize(k);
     return ans;
   }
 
-  void static permute(std::vector<DataType> &arr, size_t iters,
+  void static permute(std::vector<T> &arr, size_t iters,
                       std::vector<size_t> &swap_target) {
     for (size_t i = 0; i < iters; i++) {
       std::swap(arr[i], arr[swap_target[i]]);
@@ -44,10 +46,9 @@ public:
   }
 };
 
-template <typename DataType>
-class SeqPermutationFullSampler : Sampler<DataType> {
+template <typename T> class SeqPermutationFullSampler : Sampler<T> {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
     std::random_device rd;
     std::mt19937 gen(rd());
 
@@ -58,13 +59,13 @@ public:
       swap_targets.push_back(dis(gen));
     }
 
-    std::vector<DataType> ans(data);
+    std::vector<T> ans(data);
     permute(ans, data.size(), swap_targets);
     ans.resize(k);
     return ans;
   }
 
-  void static permute(std::vector<DataType> &arr, size_t iters,
+  void static permute(std::vector<T> &arr, size_t iters,
                       std::vector<size_t> &swap_target) {
     for (size_t i = 0; i < iters; i++) {
       std::swap(arr[i], arr[swap_target[i]]);
@@ -72,9 +73,9 @@ public:
   }
 };
 
-template <typename DataType> class ParPermutationSampler : Sampler<DataType> {
+template <typename T> class ParPermutationSampler : Sampler<T> {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
     size_t n = data.size();
 
     // generates swap targets
@@ -87,20 +88,21 @@ public:
         });
 
     // reserve and commit
-    std::vector<DataType> ans(data);
+    std::vector<T> ans(data);
     permute(ans, k, swap_target);
     ans.resize(k);
     return ans;
   }
 
-  void static permute(std::vector<DataType> &ans, size_t k,
+  void static permute(std::vector<T> &ans, size_t k,
                       parlay::sequence<size_t> &swap_target) {
     size_t n = ans.size();
     parlay::sequence<std::atomic_size_t> reservations =
         parlay::tabulate(n, [&](size_t i) { return std::atomic_size_t(n); });
+    auto less = [&](size_t a, size_t b) { return a < b; };
     auto reserve = [&](size_t i) {
-      fetch_min(reservations[i], i);
-      fetch_min(reservations[swap_target[i]], i);
+      parlay::write_min(reservations[i], i, less);
+      parlay::write_min(reservations[swap_target[i]], i, less);
     };
     auto commit = [&](size_t i) {
       size_t swap_idx = swap_target[i];
@@ -137,20 +139,12 @@ public:
           std::max<size_t>(idx_left.size() / PREFIX_DIVISOR, PREFIX_DIVISOR);
     }
   }
-
-private:
-  void static fetch_min(std::atomic_size_t &var, size_t new_value) {
-    size_t current_value = var.load();
-    while (new_value < current_value &&
-           !var.compare_exchange_weak(current_value, new_value)) {
-    }
-  }
 };
 
-template <typename DataType>
-class ParPermutationFullSampler : public ParPermutationSampler<DataType> {
+template <typename T>
+class ParPermutationFullSampler : public ParPermutationSampler<T> {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
     size_t n = data.size();
 
     // generates swap targets
@@ -162,8 +156,8 @@ public:
           return dis(r);
         });
 
-    std::vector<DataType> ans(data);
-    ParPermutationSampler<DataType>::permute(ans, n, swap_target);
+    std::vector<T> ans(data);
+    ParPermutationSampler<T>::permute(ans, n, swap_target);
     ans.resize(k);
     return ans;
   }

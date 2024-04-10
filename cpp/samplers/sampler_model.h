@@ -2,9 +2,9 @@
 
 #include <vector>
 
-template <typename DataType> class Sampler {
+template <typename T> class Sampler {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
-    return std::vector<DataType>();
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
+    return std::vector<T>();
   }
 };

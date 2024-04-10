@@ -1,6 +1,8 @@
 #include "../parlay/primitives.h"
 #include "../parlay/random.h"
+
 #include "sampler_model.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
@@ -9,9 +11,9 @@
 #include <utility>
 #include <vector>
 
-template <typename DataType> class SeqPrioritySampler : Sampler<DataType> {
+template <typename T> class SeqPrioritySampler : Sampler<T> {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
     time_t seed = time(NULL);
     srand(seed);
     std::vector<int> priority;
@@ -25,7 +27,7 @@ public:
 
     // "regenerates" the priorities again so need to reset RNG
     srand(seed);
-    std::vector<DataType> sample;
+    std::vector<T> sample;
     for (size_t i = 0; i < data.size() && sample.size() < k; i++) {
       if (rand() <= kth_priority) {
         sample.push_back(data[i]);
@@ -36,12 +38,12 @@ public:
   }
 };
 
-template <typename DataType> class ParPrioritySampler : Sampler<DataType> {
+template <typename T> class ParPrioritySampler : Sampler<T> {
 public:
-  std::vector<DataType> static sample(std::vector<DataType> data, size_t k) {
+  std::vector<T> static sample(const std::vector<T> data, size_t k) {
     parlay::random_generator gen(time(NULL));
     std::uniform_int_distribution<int> dis;
-    parlay::sequence<std::pair<DataType, int>> priority =
+    parlay::sequence<std::pair<T, int>> priority =
         parlay::tabulate(data.size(), [&](size_t i) {
           auto r = gen[i];
           return std::make_pair(data[i], dis(r));
@@ -52,7 +54,7 @@ public:
     auto leq = parlay::filter(
         priority, [&](auto elm) { return elm.second <= kth_element->second; });
 
-    std::vector<DataType> sample;
+    std::vector<T> sample;
     sample.reserve(k);
     for (size_t i = 0; i < k; i++) {
       sample.push_back(leq[i].first);
