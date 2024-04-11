@@ -2,7 +2,7 @@
 
 import os
 
-REPS = 10
+REPS = 3
 N = 500_000_000
 THREADS = [1, 12, 24]
 SAMPLERS = [
@@ -10,6 +10,7 @@ SAMPLERS = [
     "seqpriority",
     "parpriority",
     "seqperm",
+    "seqpermcopy",
     "seqpermfull",
     "parperm",
     "parpermfull",
@@ -29,12 +30,15 @@ if __name__ == "__main__":
                 with open(file_name, "w") as f:
                     f.write("algo,k,num_threads,time\n")
 
-            k = 10_000
-            delta = 10_000
-            while k < N // 100 * 10:
+            flag = False
+            k = 25_000
+            delta = 25_000
+            while k <= N // 100 * 10:
                 print(f"Running with k = {k}")
 
+                print("Running repeat ", end="", flush=True)
                 for rep in range(REPS + 1):
+                    print(f"{rep} ", end="", flush=True)
                     os.system(
                         " ".join(
                             [
@@ -49,5 +53,10 @@ if __name__ == "__main__":
                     )
 
                 k += delta
-                if k >= delta * 10:
+                if k >= delta * 4:
                     delta *= 10
+                    flag = True
+                elif flag:
+                    k = delta
+                    flag = False
+                print("")

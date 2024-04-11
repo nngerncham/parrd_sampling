@@ -12,14 +12,15 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
-#include <map>
 #include <random>
 #include <stdatomic.h>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
-#define PREFIX_DIVISOR 20
+#define PREFIX_DIVISOR 1
 
+// does some weird COW thingy
 template <typename T> class SeqPermutationSampler : Sampler<T> {
 public:
   std::vector<T> static sample(const std::vector<T> &data, size_t k) {
@@ -27,9 +28,8 @@ public:
     std::mt19937 gen(rd());
 
     std::vector<T> ans;
-    ans.reserve(k);
-    std::map<size_t, size_t> actual_target;
-    for (size_t i = 0; i < data.size(); i++) {
+    std::unordered_map<size_t, size_t> actual_target;
+    for (size_t i = 0; i < k; i++) {
       std::uniform_int_distribution<size_t> dis(i, data.size() - 1);
       size_t rd_idx = dis(gen);
 
@@ -51,6 +51,25 @@ public:
   }
 };
 
+// copies the data into ans and shuffle(ans)
+template <typename T> class SeqPermutationCopySampler : Sampler<T> {
+public:
+  std::vector<T> static sample(const std::vector<T> &data, size_t k) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::vector<T> ans(data);
+    for (size_t i = 0; i < k; i++) {
+      std::uniform_int_distribution<size_t> dis(i, data.size() - 1);
+      size_t rd_idx = dis(gen);
+      std::swap(ans[i], ans[rd_idx]);
+    }
+
+    return ans;
+  }
+};
+
+// permute the whole thing
 template <typename T> class SeqPermutationFullSampler : Sampler<T> {
 public:
   std::vector<T> static sample(const std::vector<T> &data, size_t k) {
@@ -61,7 +80,7 @@ public:
     // shuffling
     size_t n = data.size();
     std::vector<T> ans(data); // do full copy because swap anyway
-    for (size_t i = 0; i < k; i++) {
+    for (size_t i = 0; i < data.size(); i++) {
       std::uniform_int_distribution<size_t> dis(i, n - 1);
       size_t swap_idx = dis(gen);
       std::swap(ans[i], ans[swap_idx]);

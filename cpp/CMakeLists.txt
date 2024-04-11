@@ -8,5 +8,5 @@ set(CMAKE_CXX_FLAGS "-O3")
 
 add_executable("${PROJECT_NAME}" sampling_main.cpp)
 
-add_subdirectory(test)
-add_subdirectory(benchmark)
+# add_subdirectory(test)
+# add_subdirectory(benchmark)

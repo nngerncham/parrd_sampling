@@ -18,6 +18,7 @@ enum SamplerType {
   SeqPriority,
   ParPriority,
   SeqPermutation,
+  SeqPermutationCopy,
   SeqPermutationFull,
   ParPermutation,
   ParPermutationFull,
@@ -33,6 +34,8 @@ SamplerType identify_sampler(std::string arg_type) {
     return ParPriority;
   } else if (arg_type == "seqperm") {
     return SeqPermutation;
+  } else if (arg_type == "seqpermcopy") {
+    return SeqPermutationCopy;
   } else if (arg_type == "seqpermfull") {
     return SeqPermutationFull;
   } else if (arg_type == "parperm") {
@@ -78,6 +81,12 @@ void benchmark(size_t num_threads, std::ofstream &wtr, SamplerType sampler_type,
     SeqPermutationSampler<int>::sample(data, k);
     end = std::chrono::steady_clock::now();
     sampler_type_str = "SeqPermutation";
+    break;
+  case SeqPermutationCopy:
+    start = std::chrono::steady_clock::now();
+    SeqPermutationSampler<int>::sample(data, k);
+    end = std::chrono::steady_clock::now();
+    sampler_type_str = "SeqPermutationCopy";
     break;
   case SeqPermutationFull:
     start = std::chrono::steady_clock::now();
