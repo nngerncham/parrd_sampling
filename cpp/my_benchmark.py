@@ -28,7 +28,7 @@ if __name__ == "__main__":
                 with open(file_name, "w") as f:
                     f.write("algo,k,num_threads,time\n")
 
-            ks = [250_000_000]
+            ks = [150_000_000, 400_000_000]
             for k in ks:
                 print(f"Running with k = {k}")
 
