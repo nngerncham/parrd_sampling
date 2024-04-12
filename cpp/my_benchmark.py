@@ -3,14 +3,12 @@
 import os
 
 REPS = 3
-N = 500_000_000
 THREADS = [1, 12, 24]
 SAMPLERS = [
     "naive",
     "seqpriority",
     "parpriority",
     "seqperm",
-    # "seqpermcopy",
     "seqpermfull",
     "parperm",
     "parpermfull",
@@ -30,9 +28,8 @@ if __name__ == "__main__":
                 with open(file_name, "w") as f:
                     f.write("algo,k,num_threads,time\n")
 
-            k = 50_000
-            delta = 50_000
-            while k <= N:
+            ks = [250_000_000]
+            for k in ks:
                 print(f"Running with k = {k}")
 
                 print("Running repeat ", end="", flush=True)
@@ -50,10 +47,4 @@ if __name__ == "__main__":
                             ]
                         )
                     )
-
-                k += delta
-                if k >= delta * 2:
-                    delta *= 10
-                else:
-                    k = delta
                 print("")
