@@ -10,7 +10,7 @@ SAMPLERS = [
     "seqpriority",
     "parpriority",
     "seqperm",
-    "seqpermcopy",
+    # "seqpermcopy",
     "seqpermfull",
     "parperm",
     "parpermfull",
@@ -24,16 +24,15 @@ if __name__ == "__main__":
             print(f"\nRunning with {num_threads} threads")
 
             os.environ["PARLAY_NUM_THREADS"] = str(num_threads)
-            file_name = f"analysis/new_bench_results_{num_threads}_500M.csv"
+            file_name = f"analysis/new_new_bench_results_{num_threads}_500M.csv"
             if not os.path.exists(file_name):
                 # only write csv header if file does not exist
                 with open(file_name, "w") as f:
                     f.write("algo,k,num_threads,time\n")
 
-            flag = False
-            k = 25_000
-            delta = 25_000
-            while k <= N // 100 * 10:
+            k = 50_000
+            delta = 50_000
+            while k <= N:
                 print(f"Running with k = {k}")
 
                 print("Running repeat ", end="", flush=True)
@@ -53,10 +52,8 @@ if __name__ == "__main__":
                     )
 
                 k += delta
-                if k >= delta * 4:
+                if k >= delta * 2:
                     delta *= 10
-                    flag = True
-                elif flag:
+                else:
                     k = delta
-                    flag = False
                 print("")
