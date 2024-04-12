@@ -185,3 +185,6 @@ ParPermutationFull,100000000,1,86566
 ParPermutationFull,500000000,1,86540
 ParPermutationFull,500000000,1,86676
 ParPermutationFull,500000000,1,86545
+ParPriority,499999999,1,42459
+ParPriority,499999999,1,43045
+ParPriority,499999999,1,42762
